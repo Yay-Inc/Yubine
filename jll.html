@@ -9,6 +9,7 @@
     <h4>(Turn on Bluetooth and enable access to camera)</h4>
 </head>
 <body>
+    <button type="buttom" id="toggleCamera">Toggle Camera</button>
     <div style="position: relative; width: 640px; height: 480px">
         <video id="video" autoplay playsinline style="width: 100%; height: auto; display: block">Camera Feed</video>
         <div style="position: absolute; top: 220px; left: 245px; height: 40px; width: 150px; z-index: 10; border: 2px solid red; color: red">Area to capture</div>
@@ -16,6 +17,9 @@
     <button type="button" id="flipButton">Flip Video</button>
     <button type="button" id="langButton">Switch to Japanese</button>
     <button type="button" id="readText">Read Text or press 'g'</button>
+    <label>Input File: </label>
+    <input type="file" id="fileInput">
+    <button type="button" id="sendUrl">Send URL</button>
     <div></div>
     <p id="displayText"></p>
     <div></div>
