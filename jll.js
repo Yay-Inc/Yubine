@@ -1,11 +1,14 @@
 const video = document.getElementById("video");
 const flipButton = document.getElementById("flipButton");
 const readButton = document.getElementById("readText");
+const langButton = document.getElementById("langButton");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
 
+let jap = false;
+
 let worker;
-Tesseract.createWorker('eng').then(w => worker = w);
+Tesseract.createWorker('eng', 2).then(w => worker = w);
 
 // Check if the browser supports the mediaDevices API
 if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
@@ -40,7 +43,7 @@ async function readText() {
     const ctx = canvasBuffer.getContext('2d');
     // 1. Apply CSS-like filters directly to the canvas
     // threshold is simulated by high contrast and grayscale
-    ctx.filter = 'grayscale(1) contrast(3) brightness(1.2)';
+    ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
     
     // 2. Draw the video frame (it will be filtered automatically)
     ctx.drawImage(video, 0, 0, canvasBuffer.width, canvasBuffer.height);
@@ -48,7 +51,7 @@ async function readText() {
     // 3. Reset filter so bounding boxes aren't distorted/weird
     ctx.filter = 'none';
 
-    const { data } = await worker.recognize(canvasBuffer);
+    const { data } = await worker.recognize(canvasBuffer, { rectangle: { top: 220, left: 245, height: 40, width: 150 }});
     displayText.textContent = data.text;
     
     // 3. Draw bounding boxes for each word
@@ -70,6 +73,20 @@ async function readText() {
     });
 }
 
+async function changeLanguage() {
+    if (jap == false) {
+        await worker.reinitialize('jpn');
+        langButton.textContent = "Switch to English";
+        jap = true;
+    } else {
+        await worker.reinitialize('eng');
+        langButton.textContent = "Switch to Japanese";
+        jap = false;
+    }
+
+}
+
+langButton.addEventListener('click', changeLanguage);
 flipButton.addEventListener('click', flipVideo);
 readButton.addEventListener('click', readText);
 document.querySelector('html').addEventListener("keydown", event => {if (event.key == 'g') readText()});
