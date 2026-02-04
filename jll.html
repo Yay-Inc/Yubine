@@ -9,13 +9,17 @@
     <h4>(Turn on Bluetooth and enable access to camera)</h4>
 </head>
 <body>
-    <video id="video" autoplay playsinline>Camera Feed</video>
+    <div style="position: relative; width: 640px; height: 480px">
+        <video id="video" autoplay playsinline style="width: 100%; height: auto; display: block">Camera Feed</video>
+        <div style="position: absolute; top: 220px; left: 245px; height: 40px; width: 150px; z-index: 10; border: 2px solid red; color: red">Area to capture</div>
+    </div>
     <button type="button" id="flipButton">Flip Video</button>
-    <div></div>
+    <button type="button" id="langButton">Switch to Japanese</button>
     <button type="button" id="readText">Read Text or press 'g'</button>
     <div></div>
-    <canvas id="canvasBuffer"></canvas>
     <p id="displayText"></p>
+    <div></div>
+    <canvas id="canvasBuffer"></canvas>
 
 <script src="jll.js"></script>
 </body>
