@@ -9,26 +9,26 @@ const sendUrl = document.getElementById("sendUrl");
 const toggleCamera = document.getElementById("toggleCamera");
 
 let jap = false;
-let togCam = false;
 let fIn;
-
 let worker;
 Tesseract.createWorker('eng').then(w => worker = w);
 
-// Check if the browser supports the mediaDevices API
-if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices && togCam) {
-    // Request access to the camera (video only, no audio)
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then(function(stream) {
-            // Success: Attach the stream to the video element
-            video.srcObject = stream;
-        })
-        .catch(function(err) {
-            // Error handling (e.g., user denied permission, no camera found)
-            console.error("Error accessing the camera: " + err);
-        });
-} else {
-    console.error("getUserMedia not supported in this browser.");
+function turnOnCam() {
+    // Check if the browser supports the mediaDevices API
+    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+        // Request access to the camera (video only, no audio)
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(function(stream) {
+                // Success: Attach the stream to the video element
+                video.srcObject = stream;
+            })
+            .catch(function(err) {
+                // Error handling (e.g., user denied permission, no camera found)
+                console.error("Error accessing the camera: " + err);
+            });
+    } else {
+        console.error("getUserMedia not supported in this browser.");
+    }
 }
 
 function flipVideo() {
@@ -82,20 +82,19 @@ async function readFile() {
     if (!worker) return;
 
     fIn = fileInput.value;
+    
+    const response = await fetch(fIn);
+    const img = await response.blob();
 
-    const img = new Image();
+    const bimg = await createImageBitmap(img);
 
-    canvasBuffer.width = img.width;
-    canvasBuffer.height = img.height;
+    canvasBuffer.width = bimg.width;
+    canvasBuffer.height = bimg.height;
 
     const ctx = canvasBuffer.getContext('2d');
     // ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
-
-    img.src = fIn;
     
-    img.onload = function() {
-        ctx.drawImage(img, 0, 0, canvasBuffer.width, canvasBuffer.height);
-    };
+    ctx.drawImage(bimg, 0, 0, canvasBuffer.width, canvasBuffer.height);
     
     // Reset filter so bounding boxes aren't distorted/weird
     ctx.filter = 'none';
@@ -134,15 +133,7 @@ async function changeLanguage() {
     }
 }
 
-function toggleCam() {
-    if (!camTog) {
-        camTog = true;
-    } else {
-        camTog = false;
-    }
-}
-
-toggleCamera.addEventListener('click', toggleCam);
+toggleCamera.addEventListener('click', turnOnCam);
 sendUrl.addEventListener('click', readFile);
 langButton.addEventListener('click', changeLanguage);
 flipButton.addEventListener('click', flipVideo);
