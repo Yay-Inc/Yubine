@@ -1,23 +1,65 @@
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
 const video = document.getElementById("video");
 const flipButton = document.getElementById("flipButton");
 const readButton = document.getElementById("readText");
 const langButton = document.getElementById("langButton");
+const clearCanvas = document.getElementById("clearCanvas");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
-const fileInput = document.getElementById("fileInput");
-const sendUrl = document.getElementById("sendUrl");
 const toggleCamera = document.getElementById("toggleCamera");
 
-let jap = false;
-let fIn;
+let isMouseDown;
+let mouseX;
+let mouseY;
+
+let jpnese = false;
+let word;
 let worker;
-Tesseract.createWorker('eng').then(w => worker = w);
+
+Tesseract.createWorker('eng', 1, {
+    logger: () => {}, 
+    errorHandler: e => console.error(e)
+}).then(w => worker = w);
+
+const waitForEvent = (target, eventType, eventTypeOr) => 
+    new Promise(resolve => target.addEventListener(eventType, resolve, { once: true }));
+
+let translator = null;
+
+async function getTranslator() {
+    if (!translator) {
+        displayText.textContent = "Loading translation model (first time takes ~10s)...";
+
+        // env.allowLocalModels = true;
+        // env.localModelPath = '/models/';
+        // env.useBrowserCache = true;
+        // env.remoteHost = null;
+        // env.remotePathTemplate = null;
+
+        try {
+            translator = await pipeline(
+                'translation',
+                'Xenova/opus-mt-ja-en',
+                {
+                device: 'wasm',
+                dtype: 'q8'
+                }
+            );
+        } catch (err) {
+            console.error("Pipeline failed:", err);
+            displayText.textContent = "Model load failed (CORS).";
+        }
+    }
+    console.log(translator);
+    return translator;
+}
 
 function turnOnCam() {
     // Check if the browser supports the mediaDevices API
     if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
         // Request access to the camera (video only, no audio)
-        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        navigator.mediaDevices.getUserMedia({ video: {facingMode: "environment" } })
             .then(function(stream) {
                 // Success: Attach the stream to the video element
                 video.srcObject = stream;
@@ -55,59 +97,71 @@ async function readText() {
 
     // 3. Reset filter so bounding boxes aren't distorted/weird
     ctx.filter = 'none';
-
-    const { data } = await worker.recognize(canvasBuffer, { rectangle: { top: 220, left: 245, height: 40, width: 150 }});
-    displayText.textContent = data.text;
+    canvasBuffer.style.display = "revert";
     
-    // 3. Draw bounding boxes for each word
+    const frame = ctx.getImageData(0, 0, canvasBuffer.width, canvasBuffer.height);
+
     ctx.strokeStyle = "red";
     ctx.lineWidth = 2;
-    ctx.font = "16px Arial";
+    ctx.font = "12px Arial";
     ctx.fillStyle = "red";
+    
+    displayText.textContent = "Click and drag on the canvas to select text...";
+    await Promise.race([
+        waitForEvent(canvasBuffer, 'touchstart'),
+        waitForEvent(canvasBuffer, 'mousedown')
+    ]);
 
-    data.words.forEach(word => {
-        const { x0, y0, x1, y1 } = word.bbox;
-        const width = x1 - x0;
-        const height = y1 - y0;
+    const startX = mouseX;
+    const startY = mouseY;
 
-        // Draw the rectangle
-        ctx.strokeRect(x0, y0, width, height);
-
-        // Optional: Label the box with the detected text
-        ctx.fillText(word.text, x0, y0 > 20 ? y0 - 5 : y0 + 20);
+    await new Promise(resolve => {
+        function drawSelection() {
+            ctx.putImageData(frame, 0, 0); // Restore original frame
+            ctx.strokeStyle = "red";
+            ctx.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+            
+            if (isMouseDown) {
+                requestAnimationFrame(drawSelection);
+            } else {
+                resolve(); // Mouse released!
+            }
+        }
+        drawSelection();
     });
-}
+    const rect = {
+        top: Math.floor(Math.min(startY, mouseY)),
+        left: Math.floor(Math.min(startX, mouseX)),
+        height: Math.floor(Math.abs(startY - mouseY)),
+        width: Math.floor(Math.abs(startX - mouseX))
+    }
 
-async function readFile() {
-    if (!worker) return;
+    if (rect.width < 5 || rect.height < 5) {
+        displayText.textContent = "Selection too small. Please drag to select a box.";
+        return;
+    }
 
-    fIn = fileInput.value;
+    const { data } = await worker.recognize(canvasBuffer, { rectangle: rect });
     
-    const response = await fetch(fIn);
-    const img = await response.blob();
-
-    const bimg = await createImageBitmap(img);
-
-    canvasBuffer.width = bimg.width;
-    canvasBuffer.height = bimg.height;
-
-    const ctx = canvasBuffer.getContext('2d');
-    // ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
+    word = data.text.replaceAll(" ", "");
     
-    ctx.drawImage(bimg, 0, 0, canvasBuffer.width, canvasBuffer.height);
-    
-    // Reset filter so bounding boxes aren't distorted/weird
-    ctx.filter = 'none';
+    if (jpnese && word.length > 0) {
+        const t = await getTranslator();
+        if (!t) {
+            displayText.textContent = "Translator failed to load.";
+            return;
+        }
 
-    const { data } = await worker.recognize(canvasBuffer);
-    displayText.textContent = data.text;
+        const translation = await t(word, {
+            num_beams: 1,
+        });
+
+        word = `${word}\n---\n${translation[0].translation_text}`;
+    }
+
+    displayText.textContent = word;
     
     // 3. Draw bounding boxes for each word
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.font = "16px Arial";
-    ctx.fillStyle = "red";
-
     data.words.forEach(word => {
         const { x0, y0, x1, y1 } = word.bbox;
         const width = x1 - x0;
@@ -122,20 +176,55 @@ async function readFile() {
 }
 
 async function changeLanguage() {
-    if (jap == false) {
-        await worker.reinitialize('jpn');
+    if (jpnese == false) {
+        if (worker) await worker.terminate();
+        worker = await Tesseract.createWorker("jpn");
         langButton.textContent = "Switch to English";
-        jap = true;
+        jpnese = true;
     } else {
-        await worker.reinitialize('eng');
+        if (worker) await worker.terminate();
+        worker = await Tesseract.createWorker("eng");
         langButton.textContent = "Switch to Japanese";
-        jap = false;
+        jpnese = false;
     }
 }
 
 toggleCamera.addEventListener('click', turnOnCam);
-sendUrl.addEventListener('click', readFile);
 langButton.addEventListener('click', changeLanguage);
 flipButton.addEventListener('click', flipVideo);
 readButton.addEventListener('click', readText);
+clearCanvas.addEventListener('click', function() {
+    canvasBuffer.style.display = "none";
+});
 document.querySelector('html').addEventListener("keydown", event => {if (event.key == 'g') readText()});
+
+function updatePos(e) {
+    const rect = canvasBuffer.getBoundingClientRect();
+    // Touch events use e.touches[0], Mouse uses e directly
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    // Scale coordinates to match actual canvas internal resolution
+    mouseX = (clientX - rect.left) * (canvasBuffer.width / rect.width);
+    mouseY = (clientY - rect.top) * (canvasBuffer.height / rect.height);
+}
+
+// Mouse
+canvasBuffer.addEventListener('mousedown', (e) => { isMouseDown = true; updatePos(e); });
+canvasBuffer.addEventListener('mousemove', (e) => { if (isMouseDown) updatePos(e); });
+canvasBuffer.addEventListener('mouseup', () => isMouseDown = false);
+
+// Touch
+canvasBuffer.addEventListener('touchstart', (e) => { 
+    isMouseDown = true; 
+    updatePos(e); 
+}, { passive: false });
+
+canvasBuffer.addEventListener('touchmove', (e) => { 
+    if (isMouseDown) {
+        updatePos(e);
+        e.preventDefault(); // Prevents the page from scrolling while you draw
+    }
+}, { passive: false });
+
+canvasBuffer.addEventListener('touchend', () => isMouseDown = false);
