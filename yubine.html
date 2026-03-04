@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <script type="module" src="yubine.js"></script>
+    <title>Yubine Japanese Tool | by Asher</title>
+    <h1>Yubine Japanese Tool</h1>
+    <h4>(Turn on Bluetooth and enable access to camera)</h4>
+</head>
+<body>
+    <div class="buttonContainer">
+        <button type="button" id="toggleCamera">Turn on Camera</button>
+        <button type="button" id="flipButton">Flip Video</button>
+    </div>
+    <div style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">
+        <video id="video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block">Camera Feed</video>
+    </div>
+    <div class="buttonContainer">
+        <button type="button" id="readText">Read Text or press 'g'</button>
+        <button type="button" id="clearCanvas">Clear Canvas</button>
+    </div>
+    <div></div>
+    <p id="displayText"></p>
+    <canvas id="pitchPatCanvas" style="width: 600px; height: 80px"></canvas>
+    <div></div>
+    <canvas id="canvasBuffer"></canvas>
+</body>
+</html>
