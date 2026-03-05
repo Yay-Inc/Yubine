@@ -4,7 +4,7 @@ const video = document.getElementById("video");
 const readButton = document.getElementById("readText");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
-const toggleCamera = document.getElementById("toggleCamera");
+const bluetoothInit = document.getElementById("toggleCamera");
 const pitchPatCanvas = document.getElementById("pitchPatCanvas");
 
 let isMouseDown;
@@ -12,6 +12,7 @@ let mouseX;
 let mouseY;
 
 let pitchDict = null;
+let pitchCharacteristic = null;
 canvasBuffer.style.display = "none";
 
 let worker;
@@ -183,6 +184,14 @@ async function readText() {
         output += `\n\n<br>Pitch accent: `;
         pitchPatCanvas.style.display = "revert";
         drawPitPat(pat);
+
+        if (pitchCharacteristic) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(pat);
+        pitchCharacteristic.writeValue(data)
+            .then(() => console.log("Sent to device: " + pat))
+            .catch(err => console.error("Write failed: ", err));
+    }
     } else {
         output += `\n\n<br>Pitch accent for this word not found in dictionary`;
         canvasBuffer.style.display = "none";
@@ -201,7 +210,25 @@ async function readText() {
     });
 }
 
-toggleCamera.addEventListener('click', turnOnCam);
+bluetoothInit.addEventListener('click', function(event) {
+    const SerUUID = '19b10000-e8f2-537e-4f6c-d104768a1214';
+    const ChaUUID = '19b10001-e8f2-537e-4f6c-d104768a1214';
+    
+    navigator.bluetooth.requestDevice({
+    filters: [{
+        name: 'Yubine-Device'
+    }],
+    optionalServices: [SerUUID] // Required to access service later.
+})
+.then(device => device.gatt.connect())
+.then(server => server.getPrimaryService(SerUUID))
+.then(service => service.getCharacteristic(ChaUUID))
+.then(characteristic => {
+    pitchCharacteristic = characteristic;
+})
+.catch(error => { console.error(error); });
+});
+flipButton.addEventListener('click', flipVideo);
 readButton.addEventListener('click', readText);
 
 document.querySelector('html').addEventListener("keydown", event => {if (event.key == 'g') readText()});
