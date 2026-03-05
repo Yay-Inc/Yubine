@@ -1,9 +1,7 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
 const video = document.getElementById("video");
-const flipButton = document.getElementById("flipButton");
 const readButton = document.getElementById("readText");
-const clearCanvas = document.getElementById("clearCanvas");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
 const toggleCamera = document.getElementById("toggleCamera");
@@ -46,14 +44,6 @@ function turnOnCam() {
             });
     } else {
         console.error("getUserMedia not supported in this browser.");
-    }
-}
-
-function flipVideo() {
-    if (video.style.transform == "scaleX(-1)") {
-        video.style.transform = "scaleX(1)";
-    } else {
-        video.style.transform = "scaleX(-1)";
     }
 }
 
@@ -191,10 +181,12 @@ async function readText() {
         
         const pat = patList[0].join("");
         output += `\n\n<br>Pitch accent: `;
+        pitchPatCanvas.style.display = "revert";
         drawPitPat(pat);
     } else {
         output += `\n\n<br>Pitch accent for this word not found in dictionary`;
         canvasBuffer.style.display = "none";
+        pitchPatCanvas.style.display = "none";
     }
 
     displayText.innerHTML = output;
@@ -210,11 +202,8 @@ async function readText() {
 }
 
 toggleCamera.addEventListener('click', turnOnCam);
-flipButton.addEventListener('click', flipVideo);
 readButton.addEventListener('click', readText);
-clearCanvas.addEventListener('click', function() {
-    canvasBuffer.style.display = "none";
-});
+
 document.querySelector('html').addEventListener("keydown", event => {if (event.key == 'g') readText()});
 
 function updatePos(e) {
@@ -249,3 +238,4 @@ canvasBuffer.addEventListener('touchend', () => isMouseDown = false);
 
 loadPitchDict();
 turnOnCam();
+pitchPatCanvas.style.display = "none";
