@@ -5,6 +5,8 @@ const readButton = document.getElementById("readText");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
 const bluetoothInit = document.getElementById("toggleCamera");
+const inputText = document.getElementById("inputText");
+const textInput = document.getElementById("textInput");
 const pitchPatCanvas = document.getElementById("pitchPatCanvas");
 
 let isMouseDown;
@@ -150,7 +152,7 @@ async function readText() {
 
     const ctx = canvasBuffer.getContext('2d');
 
-    ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
+    // ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
     
     ctx.drawImage(video, 0, 0, canvasBuffer.width, canvasBuffer.width);
 
@@ -222,7 +224,6 @@ async function readText() {
     if (patList && patList !== "Word not found") {
         
         const pat = patList[0].join("");
-        output += `\n\n<br>Pitch accent: `;
         pitchPatCanvas.style.display = "revert";
         drawPitPat(pat);
 
@@ -270,7 +271,15 @@ bluetoothInit.addEventListener('click', function(event) {
 .catch(error => { console.error(error); });
 });
 
-readButton.addEventListener('click', readText);
+readButton.addEventListener('click', readText(null));
+inputText.addEventListener('click', async (e) => {
+    textInput.style.display = "revert";
+    inputText.style.display = "none";
+    await waitForEvent(textInput, 'input');
+    readText(textInput.value);
+    textInput.style.display = "none";
+    inputText.style.display = "revert";
+});
 
 function updatePos(e) {
     const rect = canvasBuffer.getBoundingClientRect();
@@ -305,3 +314,4 @@ canvasBuffer.addEventListener('touchend', () => isMouseDown = false);
 loadPitchDict();
 turnOnCam();
 pitchPatCanvas.style.display = "none";
+textInput.style.display = "none";
