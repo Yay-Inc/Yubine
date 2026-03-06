@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <script type="module" src="yubine.js"></script>
+    <title>Yubine Japanese Tool | by Asher</title>
+
+</head>
+<body>
+    <nav class="top_header">
+        <h1 style="font-size: clamp(25px, 5vw, 32px);">ゆびね  Yubine</h1>
+        <div class="nav_Sub_Pages">
+            <a style="text-decoration: none" href="scanner.html">Scanner</a>
+        </div>
+
+        <div class="nav_Sub_Pages">
+            <a style="text-decoration: none" href="about.html">About</a>
+        </div>
+
+        <div class="icons">
+            <a href="https://github.com/Yay-Inc/Yubine-Japanese-Tool">
+                <img src="assets/github-white-icon.png" width=auto height="30">
+            </a>
+            <a href="https://discord.com">
+                <img src="assets/discord-white-icon.png" width=auto height="30">
+            </a>
+            <a href="https://partner.projectboard.world/ysc/project/yubine-a-haptic-japanese-learning-tool">
+                <img src="assets/projectboard-logo.png" width=auto height="30">
+            </a>
+        </div>
+    </nav>
+
+    <div class="buttonContainer">
+        <button type="button" id="toggleCamera">Connect to device</button>
+    </div>
+    <div style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">
+        <video id="video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block">Camera Feed</video>
+    </div>
+    <div class="buttonContainer">
+        <button type="button" id="readText">Scan Text</button>
+    </div>
+    <div></div>
+    <p id="displayText"></p>
+    <canvas id="pitchPatCanvas" style="width: 100%; height: 80px"></canvas>
+    <div></div>
+    <canvas id="canvasBuffer"></canvas>
+
+    <footer>
+        <p style="padding: 10px;">2026 Yubine</p>
+        <a style="padding: 10px;" href="https://github.com/Yay-Inc">Asher Waldschmidt</a> |
+        <a style="padding: 10px;" href="https://github.com/pogpickleman">Ifsan Kabir</a>
+    </footer>
+<script src="https://unpkg.com/kuromoji@0.1.2/build/kuromoji.js"></script>
+</body>
+</html>
