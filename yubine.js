@@ -27,11 +27,49 @@ const waitForEvent = (target, eventType, eventTypeOr) =>
 
 async function loadPitchDict() {
     try {
-        const response = await fetch("merged.json");
+        const response = await fetch("./dictionaries/merged.json");
         pitchDict = await response.json();
     } catch (error) {
         console.error("Couldn't load pitch dictionary json", error);
     }
+}
+
+let tokenizer = null;
+
+kuromoji.builder({ dicPath: "./dictionaries/tokenFiles/" }).build(function (err, _tokenizer) {
+    if (err) {
+        console.error("Kuromoji build error:", err);
+        return;
+    }
+
+    tokenizer = _tokenizer;
+    console.log("✅ Tokenizer ready!");
+});
+
+function convert(input) {
+    let output;
+    
+    if (!tokenizer) {
+        console.log("Tokenizer not ready...");
+        return;
+    }
+
+    const tokens = tokenizer.tokenize(input);
+
+    // console.log(tokens);
+
+    // Pick the first content word (verb/adjective)
+    const mainToken = tokens.find(t =>
+        t.pos === "動詞" || t.pos === "形容詞"
+    );
+
+    if (mainToken && mainToken.basic_form !== "*") {
+        output = mainToken.basic_form;
+    } else {
+        // fallback: return the original word
+        output = input;
+    }
+    return output;
 }
 
 function turnOnCam() {
@@ -73,10 +111,10 @@ function drawPitPat(pat) {
 
     pc.clearRect(0, 0, canvasBuffer.width, canvasBuffer.height);
 
-    let prog = 10;
+    let prog = 20;
     let ht = (pat[0] === "L") ? 60 : 20;
     pc.beginPath();
-    pc.strokeStyle = "black";
+    pc.strokeStyle = "white";
     pc.lineWidth = 2;
     pc.moveTo(prog, ht);
 
@@ -87,14 +125,14 @@ function drawPitPat(pat) {
     }
     pc.stroke();
     
-    prog = 10;
+    prog = 20;
 
     for (let i = 0; i < pat.length; i++) {
         ht = (pat[i] === "L") ? 60 : 20;
         
         pc.beginPath();
-        pc.fillStyle = (i === pat.length - 1) ? "#b0e0e6" : "black";
-        pc.strokeStyle = "black";
+        pc.fillStyle = (i === pat.length - 1) ? "#00292e" : "white";
+        pc.strokeStyle = "white";
         pc.lineWidth = 2;
         pc.arc(prog, ht, 5, 0, 2 * Math.PI);
         pc.fill();
@@ -114,11 +152,11 @@ async function readText() {
 
     ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
     
-    ctx.drawImage(video, 0, 0, canvasBuffer.width, canvasBuffer.height);
-
+    ctx.drawImage(video, 0, 0, canvasBuffer.width, canvasBuffer.width);
 
     ctx.filter = 'none';
     canvasBuffer.style.display = "revert";
+    pitchPatCanvas.style.display = "none";
     
     const frame = ctx.getImageData(0, 0, canvasBuffer.width, canvasBuffer.height);
 
@@ -164,7 +202,10 @@ async function readText() {
 
     const { data } = await worker.recognize(canvasBuffer, { rectangle: rect });
     
-    const word = data.text.replace(/\s+/g, "");
+    const rawWord = data.text.replace(/\s+/g, "");
+    
+    const word = convert(rawWord);
+    
     let output = word;
 
     if (word.length === 0) {
@@ -228,10 +269,8 @@ bluetoothInit.addEventListener('click', function(event) {
 })
 .catch(error => { console.error(error); });
 });
-flipButton.addEventListener('click', flipVideo);
-readButton.addEventListener('click', readText);
 
-document.querySelector('html').addEventListener("keydown", event => {if (event.key == 'g') readText()});
+readButton.addEventListener('click', readText);
 
 function updatePos(e) {
     const rect = canvasBuffer.getBoundingClientRect();
