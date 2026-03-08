@@ -4,7 +4,8 @@ const video = document.getElementById("video");
 const readButton = document.getElementById("readText");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
-const bluetoothInit = document.getElementById("toggleCamera");
+const canvasDiv = canvasBuffer.parentElement;
+const bluetoothInit = document.getElementById("bluetoothOn");
 const inputText = document.getElementById("inputText");
 const textInput = document.getElementById("textInput");
 const pitchPatCanvas = document.getElementById("pitchPatCanvas");
@@ -15,7 +16,8 @@ let mouseY;
 
 let pitchDict = null;
 let pitchCharacteristic = null;
-canvasBuffer.style.display = "none";
+canvasDiv.style.display = "none";
+textInput.style.display = "none";
 
 let worker;
 
@@ -25,7 +27,7 @@ Tesseract.createWorker('jpn', 1, {
 }).then(w => worker = w);
 
 const waitForEvent = (target, eventType, eventTypeOr) => 
-    new Promise(resolve => target.addEventListener(eventType, resolve, { once: true }));
+    new Promise(resolve => target.addEventListener(eventType, resolve, { once: true, passive: true }) || target.addEventListener(eventTypeOr, resolve, { once: true, passive: true }));
 
 async function loadPitchDict() {
     try {
@@ -144,67 +146,116 @@ function drawPitPat(pat) {
     }
 }
 
-async function readText() {
+async function readText(inputWord) {
     if (!worker) return;
-
-    canvasBuffer.width = video.videoWidth;
-    canvasBuffer.height = video.videoHeight;
-
-    const ctx = canvasBuffer.getContext('2d');
-
-    // ctx.filter = 'grayscale(1) contrast(2) brightness(1)';
+    let rawWord;
     
-    ctx.drawImage(video, 0, 0, canvasBuffer.width, canvasBuffer.width);
+    if (inputWord === null) {
+        canvasDiv.style.display = "revert";
+        
+        const W = canvasDiv.clientWidth;
+        const H = canvasDiv.clientHeight;
+        canvasBuffer.width = W;
+        canvasBuffer.height = H;
 
-    ctx.filter = 'none';
-    canvasBuffer.style.display = "revert";
-    pitchPatCanvas.style.display = "none";
-    
-    const frame = ctx.getImageData(0, 0, canvasBuffer.width, canvasBuffer.height);
+        const ctx = canvasBuffer.getContext('2d');
 
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.font = "12px Arial";
-    ctx.fillStyle = "red";
-    
-    displayText.textContent = "Click and drag on the canvas to select text...";
-    await Promise.race([
-        waitForEvent(canvasBuffer, 'touchstart'),
-        waitForEvent(canvasBuffer, 'mousedown')
-    ]);
+        const videoW = video.videoWidth;
+        const videoH = video.videoHeight;
+        const scaleX = W / videoW;
+        const scaleY = H / videoH;
+        const scale = Math.max(scaleX, scaleY);
+        const drawW = videoW * scale;
+        const drawH = videoH * scale;
+        let sx = 0, sy = 0, sw = videoW, sh = videoH;
 
-    const startX = mouseX;
-    const startY = mouseY;
+        if (scaleX > scaleY) {
+            // Video is taller, crop top/bottom
+            sy = (drawH - H) / (2 * scale);
+            sh = H / scale;
+        } else {
+            // Video is wider, crop left/right
+            sx = (drawW - W) / (2 * scale);
+            sw = W / scale;
+        }
 
-    await new Promise(resolve => {
-        function drawSelection() {
-            ctx.putImageData(frame, 0, 0); 
-            ctx.strokeStyle = "red";
-            ctx.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
-            
-            if (isMouseDown) {
-                requestAnimationFrame(drawSelection);
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+
+        ctx.filter = 'none';
+        canvasBuffer.style.display = "block";
+        canvasBuffer.style.width = '100%';
+        canvasBuffer.style.height = '100%';
+        canvasBuffer.style.maxWidth = '640px';
+        pitchPatCanvas.style.display = "none";
+        
+        const frame = ctx.getImageData(0, 0, canvasBuffer.width, canvasBuffer.height);
+
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "red";
+        
+        canvasBuffer.style.touchAction = "none";
+        
+        let rect;
+
+        while (true) {
+            displayText.textContent = "Click and drag on the canvas to select text...";
+            await Promise.race([
+                waitForEvent(canvasBuffer, 'touchstart'),
+                waitForEvent(canvasBuffer, 'mousedown')
+            ]);
+
+            const startX = mouseX;
+            const startY = mouseY;
+
+            await new Promise(resolve => {
+                function drawSelection() {
+                    ctx.putImageData(frame, 0, 0); 
+                    ctx.strokeStyle = "red";
+                    ctx.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+                    
+                    if (isMouseDown) {
+                        requestAnimationFrame(drawSelection);
+                    } else {
+                        resolve(); 
+                    }
+                }
+                drawSelection();
+            });
+            rect = {
+                top: Math.floor(Math.min(startY, mouseY)),
+                left: Math.floor(Math.min(startX, mouseX)),
+                height: Math.floor(Math.abs(startY - mouseY)),
+                width: Math.floor(Math.abs(startX - mouseX))
+            }
+
+            if (rect.width < 5 || rect.height < 5) {
+                displayText.textContent = "Selection too small. Please drag to select a box.";
+                continue;
             } else {
-                resolve(); 
+                break;
             }
         }
-        drawSelection();
-    });
-    const rect = {
-        top: Math.floor(Math.min(startY, mouseY)),
-        left: Math.floor(Math.min(startX, mouseX)),
-        height: Math.floor(Math.abs(startY - mouseY)),
-        width: Math.floor(Math.abs(startX - mouseX))
-    }
 
-    if (rect.width < 5 || rect.height < 5) {
-        displayText.textContent = "Selection too small. Please drag to select a box.";
-        return;
-    }
+        canvasBuffer.style.touchAction = "auto";
 
-    const { data } = await worker.recognize(canvasBuffer, { rectangle: rect });
-    
-    const rawWord = data.text.replace(/\s+/g, "");
+        const { data } = await worker.recognize(canvasBuffer, { rectangle: rect });
+        
+        rawWord = data.text.replace(/\s+/g, "");
+
+        data.words.forEach(word => {
+            const { x0, y0, x1, y1 } = word.bbox;
+            const width = x1 - x0;
+            const height = y1 - y0;
+
+            ctx.strokeRect(x0, y0, width, height);
+            ctx.fillText(word.text, x0, y0 > 20 ? y0 - 5 : y0 + 20);
+        });
+    } else {
+        canvasDiv.style.display = "none";
+        rawWord = inputWord;
+    }
     
     const word = convert(rawWord);
     
@@ -236,20 +287,11 @@ async function readText() {
     }
     } else {
         output += `\n\n<br>Pitch accent for this word not found in dictionary`;
-        canvasBuffer.style.display = "none";
+        canvasDiv.style.display = "none";
         pitchPatCanvas.style.display = "none";
     }
 
     displayText.innerHTML = output;
-
-    data.words.forEach(word => {
-        const { x0, y0, x1, y1 } = word.bbox;
-        const width = x1 - x0;
-        const height = y1 - y0;
-
-        ctx.strokeRect(x0, y0, width, height);
-        ctx.fillText(word.text, x0, y0 > 20 ? y0 - 5 : y0 + 20);
-    });
 }
 
 bluetoothInit.addEventListener('click', function(event) {
@@ -271,14 +313,15 @@ bluetoothInit.addEventListener('click', function(event) {
 .catch(error => { console.error(error); });
 });
 
-readButton.addEventListener('click', readText(null));
+readButton.addEventListener('click', () => readText(null));
 inputText.addEventListener('click', async (e) => {
-    textInput.style.display = "revert";
+    textInput.style.display = "block";
     inputText.style.display = "none";
-    await waitForEvent(textInput, 'input');
+    textInput.focus();
+    await waitForEvent(textInput, 'change');
     readText(textInput.value);
     textInput.style.display = "none";
-    inputText.style.display = "revert";
+    inputText.style.display = "block";
 });
 
 function updatePos(e) {
@@ -294,24 +337,22 @@ function updatePos(e) {
 
 
 canvasBuffer.addEventListener('mousedown', (e) => { isMouseDown = true; updatePos(e); });
-canvasBuffer.addEventListener('mousemove', (e) => { if (isMouseDown) updatePos(e); });
-canvasBuffer.addEventListener('mouseup', () => isMouseDown = false);
+canvasBuffer.addEventListener('mousemove', (e) => { if (isMouseDown) updatePos(e); }); 
+window.addEventListener('mouseup', () => isMouseDown = false);
 
 canvasBuffer.addEventListener('touchstart', (e) => { 
     isMouseDown = true; 
     updatePos(e); 
-}, { passive: false });
+}, { passive: true });
 
 canvasBuffer.addEventListener('touchmove', (e) => { 
     if (isMouseDown) {
         updatePos(e);
-        e.preventDefault();
     }
-}, { passive: false });
+}, { passive: true });
 
 canvasBuffer.addEventListener('touchend', () => isMouseDown = false);
 
 loadPitchDict();
 turnOnCam();
 pitchPatCanvas.style.display = "none";
-textInput.style.display = "none";
