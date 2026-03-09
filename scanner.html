@@ -7,7 +7,8 @@
     <link rel="stylesheet" type="text/css" href="styles.css">
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <script type="module" src="yubine.js"></script>
-    <title>Yubine Japanese Tool | by Asher</title>
+    <title>Yubine | Scanner</title>
+    <link rel="icon" type="image/x-icon" href="assets/faviconYubine.ico">
 
 </head>
 <body>
@@ -35,19 +36,23 @@
     </nav>
 
     <div class="buttonContainer">
-        <button type="button" id="toggleCamera">Connect to device</button>
+        <button type="button" id="bluetoothOn">Connect to device</button>
     </div>
     <div style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">
         <video id="video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block">Camera Feed</video>
     </div>
     <div class="buttonContainer">
         <button type="button" id="readText">Scan Text</button>
+        <button type="button" class="circleBut" id="inputText">Input text</button>
+        <input type="text" id="textInput"></input>
     </div>
     <div></div>
     <p id="displayText"></p>
     <canvas id="pitchPatCanvas" style="width: 100%; height: 80px"></canvas>
     <div></div>
-    <canvas id="canvasBuffer"></canvas>
+    <div style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">
+        <canvas id="canvasBuffer"></canvas>
+    </div>
 
     <footer>
         <p style="padding: 10px;">2026 Yubine</p>

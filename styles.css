@@ -139,6 +139,7 @@ h3 {
 p {
     padding-bottom: 20px;
     line-height: 22px;
+    font-size: 14px
 }
 
 a {
@@ -147,10 +148,10 @@ a {
 
 #displayText {
     padding-left: 20px;
+    font-size: 18px;
 }
 
 #canvasBuffer {
-    touch-action: none; /* Prevents mobile scrolling while drawing */
     width: 100%;
     max-width: 640px;
 }
@@ -164,7 +165,3 @@ footer {
     padding-top: 60px;
     font-size: 14px;
 }
-
-
-
-
