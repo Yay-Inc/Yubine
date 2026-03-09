@@ -3,19 +3,23 @@
 }
 
 body {
-    background: #001044;
     background: rgb(0, 13, 59);
     color: white;
     font-family: Verdana, sans-serif;
     font-size: clamp(12px, 0.8333vw, 20px);
     padding-top: 50px;
-    
-}
-
-body {
     overflow-x: hidden;
     width: 100%;
 }
+
+
+.noto-sans-jp {
+  font-family: "Noto Sans JP", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
 
 .buttonContainer {
     display: flex;
@@ -29,7 +33,7 @@ body {
     box-sizing: border-box;
 }
 
-button {
+button, .input_box {
 
     width: 90%;
     max-width: 600px;
@@ -49,9 +53,13 @@ button {
 
     transition: background-color 0.3s ease;
     transition: transform 0.3s ease;
+
+    line-height: 1.2;     
+    box-sizing: border-box; 
+    vertical-align: middle; 
 }
 
-button:hover {
+button:hover{
     background-color: rgb(255, 105, 180);
     cursor: pointer;
     transform: scale(1.02);
@@ -59,6 +67,10 @@ button:hover {
 
 button:active {
     background-color: rgb(242, 19, 138);
+}
+
+.input_box {
+    font-family: "Noto Sans JP";
 }
 
 .top_header{
@@ -147,8 +159,13 @@ a {
 }
 
 #displayText {
+    margin-top: 20px;
     padding-left: 20px;
-    font-size: 18px;
+    font-size: 36px;
+    font-family: "Noto Sans JP";
+    line-height: 50px;
+
+
 }
 
 #canvasBuffer {
@@ -164,4 +181,14 @@ a {
 footer {
     padding-top: 60px;
     font-size: 14px;
+}
+
+.yubine {
+    font-size: clamp(25px, 5vw, 32px);
+    text-shadow: 
+    0 0 5px #fff,  
+    0 0 10px #f12bff, 
+    0 0 20px #d417d4, 
+    0 0 30px #c017b7,
+    0 0 40px #af10cb; 
 }

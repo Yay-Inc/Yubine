@@ -135,7 +135,7 @@ function drawPitPat(pat) {
         ht = (pat[i] === "L") ? 60 : 20;
         
         pc.beginPath();
-        pc.fillStyle = (i === pat.length - 1) ? "#00292e" : "white";
+        pc.fillStyle = (i === pat.length - 1) ? "rgb(0, 13, 59)" : "white";
         pc.strokeStyle = "white";
         pc.lineWidth = 2;
         pc.arc(prog, ht, 5, 0, 2 * Math.PI);

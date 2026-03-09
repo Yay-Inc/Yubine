@@ -10,10 +10,16 @@
     <title>Yubine | Scanner</title>
     <link rel="icon" type="image/x-icon" href="assets/faviconYubine.ico">
 
+    <!-- Japanese Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
+
+
 </head>
 <body>
     <nav class="top_header">
-        <h1 style="font-size: clamp(25px, 5vw, 32px);">ゆびね  Yubine</h1>
+        <h1 class="yubine">ゆびね  Yubine</h1>
         <div class="nav_Sub_Pages">
             <a style="text-decoration: none" href="scanner.html">Scanner</a>
         </div>
@@ -44,7 +50,7 @@
     <div class="buttonContainer">
         <button type="button" id="readText">Scan Text</button>
         <button type="button" class="circleBut" id="inputText">Input text</button>
-        <input type="text" id="textInput"></input>
+        <input type="text" id="textInput" class="input_box"></input>
     </div>
     <div></div>
     <p id="displayText"></p>
