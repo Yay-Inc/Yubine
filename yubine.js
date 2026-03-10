@@ -1,6 +1,7 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
 const video = document.getElementById("video");
+const videoB = document.getElementById("videoB");
 const readButton = document.getElementById("readText");
 const displayText = document.getElementById("displayText");
 const canvasBuffer = document.getElementById("canvasBuffer");
@@ -9,6 +10,9 @@ const bluetoothInit = document.getElementById("bluetoothOn");
 const inputText = document.getElementById("inputText");
 const textInput = document.getElementById("textInput");
 const pitchPatCanvas = document.getElementById("pitchPatCanvas");
+const patDropBox = document.getElementById("patDropBox");
+const patDropdown = document.getElementById("patDropdown");
+const loading = document.getElementById("loading");
 
 let isMouseDown;
 let mouseX;
@@ -18,6 +22,9 @@ let pitchDict = null;
 let pitchCharacteristic = null;
 canvasDiv.style.display = "none";
 textInput.style.display = "none";
+patDropBox.style.display = "none";
+pitchPatCanvas.style.display = "none";
+videoB.style.display = "none";
 
 let worker;
 
@@ -48,6 +55,9 @@ kuromoji.builder({ dicPath: "./dictionaries/tokenFiles/" }).build(function (err,
 
     tokenizer = _tokenizer;
     console.log("✅ Tokenizer ready!");
+    
+    loading.style.display = "none";
+    videoB.style.display = "block";
 });
 
 function convert(input) {
@@ -90,7 +100,7 @@ function turnOnCam() {
     }
 }
 
-function getPitchPat(word) {
+async function getPitchPat(word) {
     if (!pitchDict) {
         console.warn("Pitch Pattern Dictionary not loaded yet...");
         return null;
@@ -99,7 +109,35 @@ function getPitchPat(word) {
     const patterns = pitchDict[word];
 
     if (patterns && patterns.length > 0) {
-        return patterns;
+        if (patterns.length > 1) {
+            displayText.textContent = "Multiple pitch accents found:"
+            patDropBox.style.display = "revert";
+
+            for (let i = 0; i < patterns.length; i++) {
+                const newOption = document.createElement("option");
+
+                newOption.value = i;
+                const patOption = patterns[i].join("");
+                newOption.textContent = patOption;
+
+                patDropdown.appendChild(newOption);
+            }
+
+            while (true) {
+                await waitForEvent(patDropdown, "change");
+                if (patDropdown.value !== ".") {
+                    break;
+                }
+            }
+            patDropBox.style.display = "none";
+            const v = patDropdown.value;
+            while (patDropdown.length > 1) {
+                patDropdown.remove(patDropdown.options.length - 1);
+            }
+            return patterns[v];
+        } else {
+            return patterns;
+        }
     }
 
     return "Word not found";
@@ -150,6 +188,9 @@ async function readText(inputWord) {
     if (!worker) return;
     let rawWord;
     
+    pitchPatCanvas.style.display = "none";
+    textInput.value = "";
+
     if (inputWord === null) {
         canvasDiv.style.display = "revert";
         
@@ -271,10 +312,12 @@ async function readText(inputWord) {
         await loadPitchDict();
     }
     
-    const patList = getPitchPat(word);
+
+
+    const patList = await getPitchPat(word);
     if (patList && patList !== "Word not found") {
         
-        const pat = patList[0].join("");
+        const pat = patList.join("");
         pitchPatCanvas.style.display = "revert";
         drawPitPat(pat);
 
@@ -355,4 +398,3 @@ canvasBuffer.addEventListener('touchend', () => isMouseDown = false);
 
 loadPitchDict();
 turnOnCam();
-pitchPatCanvas.style.display = "none";
