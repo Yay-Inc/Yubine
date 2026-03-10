@@ -111,7 +111,10 @@ async function getPitchPat(word) {
     if (patterns && patterns.length > 0) {
         if (patterns.length > 1) {
             displayText.textContent = "Multiple pitch accents found:"
-            patDropBox.style.display = "revert";
+            while (patDropdown.length > 1) {
+                patDropdown.remove(patDropdown.options.length - 1);
+            }
+            patDropBox.style.display = "block";
 
             for (let i = 0; i < patterns.length; i++) {
                 const newOption = document.createElement("option");
@@ -131,12 +134,9 @@ async function getPitchPat(word) {
             }
             patDropBox.style.display = "none";
             const v = patDropdown.value;
-            while (patDropdown.length > 1) {
-                patDropdown.remove(patDropdown.options.length - 1);
-            }
             return patterns[v];
         } else {
-            return patterns;
+            return patterns[0];
         }
     }
 
@@ -189,6 +189,7 @@ async function readText(inputWord) {
     let rawWord;
     
     pitchPatCanvas.style.display = "none";
+    patDropBox.style.display = "none";
     textInput.value = "";
 
     if (inputWord === null) {
