@@ -21,7 +21,7 @@
     <nav class="top_header">
         <h1 class="yubine">ゆびね  Yubine</h1>
         <div class="nav_Sub_Pages">
-            <a style="text-decoration: none" href="scanner.html">Scanner</a>
+            <a style="text-decoration: none" href="index.html">Scanner</a>
         </div>
 
         <div class="nav_Sub_Pages">
@@ -44,7 +44,10 @@
     <div class="buttonContainer">
         <button type="button" id="bluetoothOn">Connect to device</button>
     </div>
-    <div style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">
+    <div id="loading" style="display: flex; justify-content: center; align-items: center;">
+        <img src="assets/Gray_circles_rotate.gif" style="width: 20%; height: auto">
+    </div>
+    <div id="videoB" style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">
         <video id="video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block">Camera Feed</video>
     </div>
     <div class="buttonContainer">
@@ -54,6 +57,13 @@
     </div>
     <div></div>
     <p id="displayText"></p>
+    <div id="patDropBox" style="padding-left: 20px;">
+        <select name="Choose pitch accent..." id="patDropdown" class="input_box">
+            <option value="." selected>Choose pitch accent...</option>
+
+        </select>
+
+    </div>
     <canvas id="pitchPatCanvas" style="width: 100%; height: 80px"></canvas>
     <div></div>
     <div style="position: relative; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 4 / 3;">

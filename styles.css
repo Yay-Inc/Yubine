@@ -14,10 +14,10 @@ body {
 
 
 .noto-sans-jp {
-  font-family: "Noto Sans JP", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 500;
-  font-style: normal;
+    font-family: "Noto Sans JP", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
 }
 
 
@@ -192,3 +192,33 @@ footer {
     0 0 30px #c017b7,
     0 0 40px #af10cb; 
 }
+
+select,
+::picker(select) {
+  appearance: base-select;
+}
+
+::picker(select) {
+background-color: pink;
+border: 5px solid purple;
+border-radius: 25px;
+}
+
+select :checked {
+  background-color: rgb(172, 10, 172);
+  color: white;
+  outline: none;
+}
+
+::picker(select)::-webkit-scrollbar {
+  display: none;
+}
+
+select:focus, 
+select:focus-visible {
+  outline: none; /* Removes the default ring */
+  box-shadow: none;
+}
+
+
+
