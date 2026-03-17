@@ -116,14 +116,19 @@ async function getPitchPat(word) {
             }
             patDropBox.style.display = "block";
 
+            let seen = [];
+
             for (let i = 0; i < patterns.length; i++) {
-                const newOption = document.createElement("option");
-
-                newOption.value = i;
                 const patOption = patterns[i].join("");
-                newOption.textContent = patOption;
 
-                patDropdown.appendChild(newOption);
+                if (!seen.includes(patOption)) {
+                    seen.push(patOption);
+
+                    const newOption = document.createElement("option");
+                    newOption.value = i;
+                    newOption.textContent = patOption;
+                    patDropdown.appendChild(newOption);
+                }
             }
 
             while (true) {
