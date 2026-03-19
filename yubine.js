@@ -13,6 +13,7 @@ const pitchPatCanvas = document.getElementById("pitchPatCanvas");
 const patDropBox = document.getElementById("patDropBox");
 const patDropdown = document.getElementById("patDropdown");
 const loading = document.getElementById("loading");
+const pitchPatText = document.getElementById("pitchPatText");
 
 let isMouseDown;
 let mouseX;
@@ -62,6 +63,7 @@ kuromoji.builder({ dicPath: "./dictionaries/tokenFiles/" }).build(function (err,
 
 function convert(input) {
     let output;
+    let reading;
     
     if (!tokenizer) {
         console.log("Tokenizer not ready...");
@@ -70,20 +72,34 @@ function convert(input) {
 
     const tokens = tokenizer.tokenize(input);
 
-    // console.log(tokens);
-
-    // Pick the first content word (verb/adjective)
+    // Added "名詞" (Noun) and "形状詞" (Adjectival Noun)
     const mainToken = tokens.find(t =>
-        t.pos === "動詞" || t.pos === "形容詞"
+        t.pos === "動詞" || 
+        t.pos === "形容詞" || 
+        t.pos === "名詞" || 
+        t.pos === "形状詞"
     );
 
-    if (mainToken && mainToken.basic_form !== "*") {
-        output = mainToken.basic_form;
+    if (mainToken) {
+        // 1. Get the dictionary base form (like converting "行った" to "行く")
+        output = (mainToken.basic_form && mainToken.basic_form !== "*") 
+                ? mainToken.basic_form 
+                : mainToken.surface_form;
+                
+        // 2. Safely fetch reading. 
+        // Fallback to surface_form if reading/pronunciation are missing (common with Hiragana input)
+        let rawReading = mainToken.reading || mainToken.pronunciation || mainToken.surface_form;
+
+        // 3. Always convert the reading to Hiragana for consistency
+        reading = wanakana.toHiragana(rawReading);
+
     } else {
-        // fallback: return the original word
         output = input;
+        reading = wanakana.isKana(input) ? wanakana.toHiragana(input) : null;
     }
-    return output;
+
+    console.log(`Input: ${input} -> Output: ${output}, Reading: ${reading}`);
+    return [output, reading];
 }
 
 function turnOnCam() {
@@ -194,6 +210,7 @@ async function readText(inputWord) {
     let rawWord;
     
     pitchPatCanvas.style.display = "none";
+    pitchPatCanvas.textContent = "";
     patDropBox.style.display = "none";
     textInput.value = "";
 
@@ -304,12 +321,13 @@ async function readText(inputWord) {
         rawWord = inputWord;
     }
     
-    const word = convert(rawWord);
+    const [word, reading] = convert(rawWord);
     
     let output = word;
 
     if (word.length === 0) {
         displayText.textContent = "No text detected.";
+        pitchPatText.textContent = "";
         return;
     }
 
@@ -318,14 +336,13 @@ async function readText(inputWord) {
         await loadPitchDict();
     }
     
-
-
     const patList = await getPitchPat(word);
     if (patList && patList !== "Word not found") {
         
         const pat = patList.join("");
         pitchPatCanvas.style.display = "revert";
         drawPitPat(pat);
+        pitchPatText.textContent =  reading + "[が]";
 
         if (pitchCharacteristic) {
         const encoder = new TextEncoder();
@@ -338,6 +355,7 @@ async function readText(inputWord) {
         output += `\n\n<br>Pitch accent for this word not found in dictionary`;
         canvasDiv.style.display = "none";
         pitchPatCanvas.style.display = "none";
+        pitchPatText.textContent = "";
     }
 
     displayText.innerHTML = output;
