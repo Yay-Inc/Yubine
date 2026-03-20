@@ -1,7 +1,7 @@
 # Yubine Japanese Tool
 ### [Visit it here](https://yay-inc.github.io/Yubine)
 
-Javascript HTML-based Web App for Yubine device
+Javascript HTML-based Web App for Yubine device  
 Connects with Bluetooth but doesn't work on iOS...
 
 ## Libraries used:
