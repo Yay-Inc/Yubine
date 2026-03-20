@@ -1,5 +1,10 @@
 # Yubine Japanese Tool
+### [Visit it here](https://yay-inc.github.io/Yubine)
 
-Web App for science fair project doohickey
+Javascript HTML-based Web App for Yubine device
+Connects with Bluetooth but doesn't work on iOS...
 
-[Visit it here](https://yay-inc.github.io/Yubine)
+## Libraries used:
+[Tesseract.js](https://github.com/naptha/tesseract.js)
+[Kuromoji.js](https://github.com/takuyaa/kuromoji.js)
+[Wanakana.js](https://github.com/WaniKani/WanaKana)
